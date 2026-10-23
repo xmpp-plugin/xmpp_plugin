@@ -118,6 +118,8 @@ public class FlutterXmppConnectionService extends Service {
                 public void run() {
                     if (mConnection != null) {
                         mConnection.disconnect();
+                    } else {
+                        FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
                     }
                 }
             });

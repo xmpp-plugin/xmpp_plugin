@@ -853,25 +853,19 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
     // login
     private void doLogin() {
         try {
-            boolean callPrivateFunction = false;
             final Handler handler = new Handler();
-            final ConnectionState state = FlutterXmppConnectionService.getState();
-            if (state != null) {
-                Utils.printLog("Trying To Connect With XMPP: " + state.toString());
+            handler.post(new Runnable() {
+                private int attempts = 0;
 
-                if (state.equals(ConnectionState.FAILED)) {
-                    applicationContext.stopService(new Intent(applicationContext, FlutterXmppConnectionService.class));
-                    Utils.printLog("LOGOUT CALLED");
-                    callPrivateFunction = true;
-                }
+                @Override
+                public void run() {
+                    final ConnectionState state = FlutterXmppConnectionService.getState();
+                    Utils.printLog("Trying To Connect With XMPP: " + state.toString());
 
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Utils.printLog("AFTER LOGOUT CALLED STATE: " + state.toString());
-
-                        // Start login process if the state is DISCONNECTED or FAILED
-                        if (state.equals(ConnectionState.DISCONNECTED) || state.equals(ConnectionState.FAILED)) {
+                    // Read state for every attempt. A previous implementation
+                    // captured it before the delayed logout and could start a
+                    // replacement session based on obsolete information.
+                    if (state.equals(ConnectionState.DISCONNECTED) || state.equals(ConnectionState.FAILED)) {
                             Utils.printLog("COMES TO CALL LOGIN");
                             Intent i = new Intent(applicationContext, FlutterXmppConnectionService.class);
                             i.putExtra(Constants.JID_USER, jid_user);
@@ -891,28 +885,17 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
                                 }
                                 Utils.printLog("XMPP login skipped because Android rejected a background service start: " + e);
                             }
-                        } else {
-                            Utils.printLog("DO NOT call login because connection state is " + state.toString());
-
-                            if (state.equals(ConnectionState.CONNECTING)) {
-                                synchronized (FlutterXmppConnectionService.class) {
-                                    FlutterXmppConnectionService.sConnectionState = ConnectionState.CONNECTING;
-                                }
-//                                Intent i1 = new Intent(activity, FlutterXmppConnectionService.class);
-//                                activity.stopService(i1);
-//                                FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
-                            }
-                        }
-
-                        // Do not overwrite the service callback state with the
-                        // pre-start snapshot captured above. The connection
-                        // callbacks are the authoritative state transitions.
+                        return;
                     }
-                }, callPrivateFunction ? 2000 : 100);
-            } else {
-                Utils.printLog("Connection state is null.");
-                FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
-            }
+
+                    if (attempts++ >= 50) {
+                        FlutterXmppConnectionService.sConnectionState = ConnectionState.FAILED;
+                        Utils.printLog("XMPP replacement login timed out waiting for disconnect");
+                        return;
+                    }
+                    handler.postDelayed(this, 100);
+                }
+            });
         } catch (Exception e) {
             Utils.printLog("Exception occurred: " + e.getMessage());
             FlutterXmppConnectionService.sConnectionState = ConnectionState.FAILED;
@@ -925,8 +908,8 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
         ConnectionState state = FlutterXmppConnectionService.getState();
         if (!state.equals(ConnectionState.DISCONNECTED) && !state.equals(ConnectionState.DISCONNECTING)) {
             Intent i1 = new Intent(applicationContext, FlutterXmppConnectionService.class);
+            FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTING;
             applicationContext.stopService(i1);
-            FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
         }
     }
 

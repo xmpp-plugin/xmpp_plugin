@@ -12,6 +12,7 @@ public class FlutterXmppPlugin: NSObject, FlutterPlugin {
     var objConnectionEventData : FlutterEventSink?
     var objSuccessEventData : FlutterEventSink?
     var objErrorEventData : FlutterEventSink?
+    var pendingLogoutResult: FlutterResult?
 
     var objXMPP : XMPPController = XMPPController.sharedInstance
     var objXMPPConnStatus : xmppConnectionStatus = xmppConnectionStatus.None {
@@ -253,8 +254,13 @@ public class FlutterXmppPlugin: NSObject, FlutterPlugin {
         }
         let vMethod : String = call.method.trim()
         printLog("\(#function) | \(vMethod) | arguments: \(dicData)")
+        if self.objXMPP.xmppStream.isDisconnected {
+            APP_DELEGATE.objXMPPConnStatus = .None
+            result(xmppConstants.SUCCESS)
+            return
+        }
+        self.pendingLogoutResult = result
         self.objXMPP.disconnect(withStrem: self.objXMPP.xmppStream)
-        result(xmppConstants.SUCCESS)
     }
 
     func performPotestuaActivity(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
@@ -763,6 +769,7 @@ public class FlutterXmppPlugin: NSObject, FlutterPlugin {
             
         case .Disconnect:
             APP_DELEGATE.objXMPPConnStatus = .None
+            self.performXMPPConnectionActivity()
             
         default:
             break
@@ -839,6 +846,10 @@ public class FlutterXmppPlugin: NSObject, FlutterPlugin {
         case .Disconnect,
              .None:
             valueStatus = xmppConnStatus.Disconnect
+            if let pendingLogoutResult = self.pendingLogoutResult {
+                self.pendingLogoutResult = nil
+                pendingLogoutResult(xmppConstants.SUCCESS)
+            }
         }
         if valueStatus.isEmpty {
             print("\(#function) | XMPPConnetion status nil/empty.")
