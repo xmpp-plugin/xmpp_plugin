@@ -225,6 +225,9 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
 
                 applicationContext.sendBroadcast(intent);
             }
+        } else {
+            Utils.broadcastErrorMessageToFlutter(applicationContext, ErrorState.SEND_MESSAGE_FAILED,
+                    "XMPP connection is not authenticated", toUser);
         }
     }
 

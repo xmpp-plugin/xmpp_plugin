@@ -164,6 +164,14 @@ class XMPPController : NSObject {
     func isSendMessage() ->Bool {
         return (self.isConnected() && self.isAuthenticated())
     }
+    func emitSendFailure(to jid: String, error: String) {
+        let data: [String: Any] = [
+            "type": "send_message_failed",
+            "from": jid,
+            "exception": error,
+        ]
+        APP_DELEGATE.objErrorEventData?(data)
+    }
     
     func getUserId(usingXMPPStream objXMPPStream : XMPPStream) -> String {
         var vUserId : String = ""
@@ -333,6 +341,7 @@ extension XMPPController {
     
     func xmppStream(_ sender: XMPPStream, didFailToSend message: XMPPMessage, error: Error) {
         printLog("didFailToSend message : \(error.localizedDescription)")
+        emitSendFailure(to: message.to?.description ?? "", error: error.localizedDescription)
     }
 }
 

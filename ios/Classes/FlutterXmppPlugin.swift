@@ -328,6 +328,11 @@ public class FlutterXmppPlugin: NSObject, FlutterPlugin {
             customElement = (vData["customText"] as? String ?? "").trim()
         }
         let isGroupMess : Bool = [pluginMethod.sendMessageInGroup, pluginMethod.sendCustomMessageInGroup].contains(vMethod)
+        guard self.objXMPP.isSendMessage() else {
+            self.objXMPP.emitSendFailure(to: toJid, error: "XMPP connection is not authenticated")
+            result(xmppConstants.SUCCESS)
+            return
+        }
         self.objXMPP.sendMessage(messageBody: body,
                                  time: time,
                                  reciverJID: toJid,

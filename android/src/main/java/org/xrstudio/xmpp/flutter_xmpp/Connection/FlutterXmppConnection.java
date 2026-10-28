@@ -205,10 +205,13 @@ public class FlutterXmppConnection implements ConnectionListener {
 
         } catch (SmackException.NotConnectedException e) {
             e.printStackTrace();
+            Utils.broadcastErrorMessageToFlutter(mApplicationContext, ErrorState.SEND_MESSAGE_FAILED, e.getLocalizedMessage(), toJid);
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Utils.broadcastErrorMessageToFlutter(mApplicationContext, ErrorState.SEND_MESSAGE_FAILED, e.getLocalizedMessage(), toJid);
         } catch (Exception e) {
             e.printStackTrace();
+            Utils.broadcastErrorMessageToFlutter(mApplicationContext, ErrorState.SEND_MESSAGE_FAILED, e.getLocalizedMessage(), toJid);
         }
     }
 
@@ -832,10 +835,13 @@ public class FlutterXmppConnection implements ConnectionListener {
 
         } catch (SmackException.NotConnectedException e) {
             e.printStackTrace();
+            Utils.broadcastErrorMessageToFlutter(mApplicationContext, ErrorState.SEND_MESSAGE_FAILED, e.getLocalizedMessage(), toJid);
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Utils.broadcastErrorMessageToFlutter(mApplicationContext, ErrorState.SEND_MESSAGE_FAILED, e.getLocalizedMessage(), toJid);
         } catch (Exception e) {
             e.printStackTrace();
+            Utils.broadcastErrorMessageToFlutter(mApplicationContext, ErrorState.SEND_MESSAGE_FAILED, e.getLocalizedMessage(), toJid);
         }
     }
 

@@ -1,5 +1,10 @@
 // ignore: constant_identifier_names
-enum ErrorResponseState { group_creation_failed, group_joined_failed, none }
+enum ErrorResponseState {
+  group_creation_failed,
+  group_joined_failed,
+  send_message_failed,
+  none,
+}
 
 extension ErrorResponseStateParser on String {
   ErrorResponseState toErrorResponseState() {
