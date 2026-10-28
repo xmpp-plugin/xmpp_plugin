@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import org.xrstudio.xmpp.flutter_xmpp.Connection.FlutterXmppConnection;
 import org.xrstudio.xmpp.flutter_xmpp.Connection.FlutterXmppConnectionService;
 import org.xrstudio.xmpp.flutter_xmpp.Enum.ConnectionState;
+import org.xrstudio.xmpp.flutter_xmpp.Enum.ErrorState;
 import org.xrstudio.xmpp.flutter_xmpp.Enum.GroupRole;
 import org.xrstudio.xmpp.flutter_xmpp.Utils.Constants;
 import org.xrstudio.xmpp.flutter_xmpp.Utils.Utils;
