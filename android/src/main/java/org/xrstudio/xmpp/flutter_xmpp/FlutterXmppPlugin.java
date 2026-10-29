@@ -869,7 +869,8 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
                     // Read state for every attempt. A previous implementation
                     // captured it before the delayed logout and could start a
                     // replacement session based on obsolete information.
-                    if (state.equals(ConnectionState.DISCONNECTED) || state.equals(ConnectionState.FAILED)) {
+                    if ((state.equals(ConnectionState.DISCONNECTED) || state.equals(ConnectionState.FAILED))
+                            && !FlutterXmppConnectionService.isServiceRunning()) {
                             Utils.printLog("COMES TO CALL LOGIN");
                             Intent i = new Intent(applicationContext, FlutterXmppConnectionService.class);
                             i.putExtra(Constants.JID_USER, jid_user);
@@ -895,6 +896,9 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
                     if (attempts++ >= 50) {
                         FlutterXmppConnectionService.sConnectionState = ConnectionState.FAILED;
                         Utils.printLog("XMPP replacement login timed out waiting for disconnect");
+                        Utils.broadcastConnectionMessageToFlutter(applicationContext, ConnectionState.FAILED,
+                                "XMPP replacement login timed out waiting for native teardown");
+                        applicationContext.stopService(new Intent(applicationContext, FlutterXmppConnectionService.class));
                         return;
                     }
                     handler.postDelayed(this, 100);
@@ -908,12 +912,14 @@ public class FlutterXmppPlugin implements MethodCallHandler, FlutterPlugin, Acti
 
 
     private void logout() {
-        // Check if user is connected to xmpp ? if yes then break connection.
-        ConnectionState state = FlutterXmppConnectionService.getState();
-        if (!state.equals(ConnectionState.DISCONNECTED) && !state.equals(ConnectionState.DISCONNECTING)) {
+        // The old service must complete teardown before a profile/session
+        // replacement can start. Its terminal state is set by the service.
+        if (FlutterXmppConnectionService.isServiceRunning()) {
             Intent i1 = new Intent(applicationContext, FlutterXmppConnectionService.class);
             FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTING;
             applicationContext.stopService(i1);
+        } else {
+            FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
         }
     }
 

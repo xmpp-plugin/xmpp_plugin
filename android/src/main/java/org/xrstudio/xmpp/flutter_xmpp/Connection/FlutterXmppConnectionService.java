@@ -20,6 +20,7 @@ public class FlutterXmppConnectionService extends Service {
 
     public static LoggedInState sLoggedInState;
     public static ConnectionState sConnectionState;
+    private static volatile boolean sServiceRunning;
     private Integer port;
     private Thread mThread;
     private boolean mActive;
@@ -47,6 +48,10 @@ public class FlutterXmppConnectionService extends Service {
         return sLoggedInState;
     }
 
+    public static boolean isServiceRunning() {
+        return sServiceRunning;
+    }
+
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -55,6 +60,7 @@ public class FlutterXmppConnectionService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        sServiceRunning = true;
 
         Utils.printLog(" onCreate(): ");
 
@@ -97,6 +103,10 @@ public class FlutterXmppConnectionService extends Service {
                     public void run() {
                         Looper.prepare();
                         mTHandler = new Handler();
+                        if (!mActive) {
+                            completeStop();
+                            return;
+                        }
                         initConnection();
                         Looper.loop();
                     }
@@ -116,13 +126,26 @@ public class FlutterXmppConnectionService extends Service {
             mTHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (mConnection != null) {
-                        mConnection.disconnect();
-                    } else {
-                        FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
+                    try {
+                        if (mConnection != null) {
+                            mConnection.disconnect();
+                            mConnection = null;
+                        }
+                    } finally {
+                        completeStop();
                     }
                 }
             });
+        } else {
+            completeStop();
+        }
+    }
+
+    private void completeStop() {
+        FlutterXmppConnectionService.sConnectionState = ConnectionState.DISCONNECTED;
+        sServiceRunning = false;
+        if (Thread.currentThread() == mThread) {
+            Looper.myLooper().quitSafely();
         }
     }
 
@@ -161,8 +184,8 @@ public class FlutterXmppConnectionService extends Service {
     public void onDestroy() {
 
         Utils.printLog(" onDestroy(): ");
-        super.onDestroy();
         stop();
+        super.onDestroy();
     }
 }
 
